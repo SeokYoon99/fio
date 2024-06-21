@@ -948,6 +948,29 @@ static void handle_thinktime(struct thread_data *td, enum fio_ddir ddir,
 	}
 }
 
+unsigned int global_req_count = 0;
+unsigned int cold_wait_count = 0;
+double mu_cold = 7.0;
+double sigma_cold = 2.0;
+double c0, c1;
+
+void box_muller(double *z0, double *z1) {
+	double u1 = (double)rand() / RAND_MAX;
+	double u2 = (double)rand() / RAND_MAX;
+
+	*z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
+	*z1 = sqrt(-2.0 * log(u2)) * sin(2.0 * M_PI * u2);
+}
+
+void generate_normal_random_numbers(double mu, double sigma, double *x0, double *x1) {
+	double z0, z1;
+	box_muller(&z0, &z1);
+
+	*x0 = mu + sigma * z0;
+	*x1 = mu + sigma * z1;
+}
+
+
 /*
  * Main IO worker function. It retrieves io_u's to process and queues
  * and reaps them, checking for rate and errors along the way.
